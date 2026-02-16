@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Space - Cosmic Explorer</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'space-black': '#0a0a0a',
+                        'cosmic-navy': '#1a1a2e',
+                        'stellar-white': '#f8f8f2',
+                        'nebula-blue': '#16213e',
+                        'mars-red': '#cd5c5c',
+                        'jupiter-orange': '#d2691e',
+                        'saturn-gold': '#daa520',
+                        'ice-blue': '#87ceeb'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'orbitron': ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(30, 144, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 20% 80%, rgba(255, 20, 147, 0.1) 0%, transparent 50%);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(248, 248, 242, 0.3);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(10px);
+            background: rgba(26, 26, 46, 0.8);
+        }
+        
+        .learning-card {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(248, 248, 242, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .learning-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(135, 206, 235, 0.2);
+            border-color: rgba(135, 206, 235, 0.3);
+        }
+        
+        .quiz-card {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(248, 248, 242, 0.1);
+        }
+        
+        .answer-option {
+            background: rgba(26, 26, 46, 0.7);
+            border: 1px solid rgba(248, 248, 242, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .answer-option:hover {
+            background: rgba(22, 33, 62, 0.8);
+            border-color: rgba(135, 206, 235, 0.5);
+        }
+        
+        .answer-option.selected {
+            background: rgba(135, 206, 235, 0.2);
+            border-color: #87ceeb;
+        }
+        
+        .answer-option.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+        
+        .answer-option.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        .achievement-badge {
+            background: linear-gradient(135deg, #87ceeb 0%, #daa520 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .typing-text {
+            border-right: 2px solid #87ceeb;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { border-color: transparent; }
+            51%, 100% { border-color: #87ceeb; }
+        }
+    </style>
+</head>
+<body class="bg-space-black text-stellar-white font-inter">
+    <!-- Animated Starfield Background -->
+    <div class="starfield"></div>
+    
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-stellar-white/10">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-ice-blue to-jupiter-orange">
+                        <div class="w-full h-full rounded-full bg-gradient-to-br from-transparent to-white/20"></div>
+                    </div>
+                    <h1 class="text-2xl font-orbitron font-bold glow-text">Cosmic Explorer</h1>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Solar System</a>
+                    <a href="planets.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Planets</a>
+                    <a href="missions.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Missions</a>
+                    <a href="education.html" class="text-stellar-white hover:text-ice-blue transition-colors duration-300 font-medium">Learn</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden text-stellar-white hover:text-ice-blue transition-colors duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-24 pb-12">
+        <div class="container mx-auto px-6">
+            <!-- Page Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-5xl font-orbitron font-black glow-text mb-4">Learn About Space</h1>
+                <p class="text-xl text-stellar-white/70 max-w-3xl mx-auto">
+                    Explore the wonders of our solar system through interactive lessons, fun facts, and challenging quizzes. 
+                    Test your knowledge and unlock achievements as you master space science.
+                </p>
+            </div>
+            
+            <!-- Learning Progress -->
+            <div class="learning-card rounded-2xl p-8 mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-orbitron font-bold glow-text">Your Learning Progress</h2>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <svg class="progress-ring w-16 h-16">
+                                <circle class="progress-ring-circle" stroke="#87ceeb" stroke-width="4" fill="transparent" r="40" cx="32" cy="32"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span id="progress-percentage" class="text-lg font-bold">0%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-stellar-white/70">Overall Progress</p>
+                            <p class="text-lg font-semibold"><span id="completed-lessons">0</span> / 4 Lessons</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div class="learning-progress-item" data-lesson="planets">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full border-2 border-stellar-white/30 flex items-center justify-center">
+                                <span class="text-sm">1</span>
+                            </div>
+                            <span class="text-sm">Planets</span>
+                        </div>
+                    </div>
+                    <div class="learning-progress-item" data-lesson="orbits">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full border-2 border-stellar-white/30 flex items-center justify-center">
+                                <span class="text-sm">2</span>
+                            </div>
+                            <span class="text-sm">Orbits</span>
+                        </div>
+                    </div>
+                    <div class="learning-progress-item" data-lesson="missions">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full border-2 border-stellar-white/30 flex items-center justify-center">
+                                <span class="text-sm">3</span>
+                            </div>
+                            <span class="text-sm">Missions</span>
+                        </div>
+                    </div>
+                    <div class="learning-progress-item" data-lesson="space-facts">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full border-2 border-stellar-white/30 flex items-center justify-center">
+                                <span class="text-sm">4</span>
+                            </div>
+                            <span class="text-sm">Space Facts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Learning Modules -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <!-- Interactive Lessons -->
+                <div class="learning-card rounded-2xl p-8">
+                    <h2 class="text-2xl font-orbitron font-bold glow-text mb-6">Interactive Lessons</h2>
+                    <div class="space-y-4">
+                        <div class="lesson-item p-4 bg-cosmic-navy/50 rounded-lg cursor-pointer hover:bg-cosmic-navy/70 transition-colors duration-300" onclick="startLesson('planets')">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-ice-blue">Planets of Our Solar System</h3>
+                                    <p class="text-stellar-white/70 text-sm">Learn about the 8 planets and their unique characteristics</p>
+                                </div>
+                                <div class="text-2xl">🪐</div>
+                            </div>
+                        </div>
+                        
+                        <div class="lesson-item p-4 bg-cosmic-navy/50 rounded-lg cursor-pointer hover:bg-cosmic-navy/70 transition-colors duration-300" onclick="startLesson('orbits')">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-ice-blue">Orbital Mechanics</h3>
+                                    <p class="text-stellar-white/70 text-sm">Understand how planets move around the Sun</p>
+                                </div>
+                                <div class="text-2xl">🔄</div>
+                            </div>
+                        </div>
+                        
+                        <div class="lesson-item p-4 bg-cosmic-navy/50 rounded-lg cursor-pointer hover:bg-cosmic-navy/70 transition-colors duration-300" onclick="startLesson('missions')">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-ice-blue">Space Exploration</h3>
+                                    <p class="text-stellar-white/70 text-sm">Discover the history of space missions</p>
+                                </div>
+                                <div class="text-2xl">🚀</div>
+                            </div>
+                        </div>
+                        
+                        <div class="lesson-item p-4 bg-cosmic-navy/50 rounded-lg cursor-pointer hover:bg-cosmic-navy/70 transition-colors duration-300" onclick="startLesson('space-facts')">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-ice-blue">Amazing Space Facts</h3>
+                                    <p class="text-stellar-white/70 text-sm">Incredible facts about our universe</p>
+                                </div>
+                                <div class="text-2xl">⭐</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quiz Section -->
+                <div class="quiz-card rounded-2xl p-8">
+                    <h2 class="text-2xl font-orbitron font-bold glow-text mb-6">Knowledge Quiz</h2>
+                    <div id="quiz-container">
+                        <div id="quiz-start" class="text-center">
+                            <p class="text-stellar-white/70 mb-6">Test your knowledge about space and our solar system!</p>
+                            <button onclick="startQuiz()" class="px-8 py-3 bg-nebula-blue hover:bg-ice-blue transition-colors duration-300 rounded-lg font-medium">
+                                Start Quiz
+                            </button>
+                        </div>
+                        
+                        <div id="quiz-question" class="hidden">
+                            <div class="mb-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-stellar-white/70">Question <span id="current-question">1</span> of <span id="total-questions">10</span></span>
+                                    <span class="text-sm text-stellar-white/70">Score: <span id="current-score">0</span></span>
+                                </div>
+                                <div class="w-full bg-cosmic-navy rounded-full h-2">
+                                    <div id="quiz-progress" class="bg-ice-blue h-2 rounded-full transition-all duration-300" style="width: 10%"></div>
+                                </div>
+                            </div>
+                            
+                            <h3 id="question-text" class="text-xl font-semibold mb-6"></h3>
+                            <div id="answer-options" class="space-y-3 mb-6">
+                                <!-- Answer options will be populated here -->
+                            </div>
+                            
+                            <div class="flex justify-between">
+                                <button id="prev-question" onclick="previousQuestion()" class="px-6 py-2 bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300 rounded-lg font-medium disabled:opacity-50" disabled>
+                                    Previous
+                                </button>
+                                <button id="next-question" onclick="nextQuestion()" class="px-6 py-2 bg-nebula-blue hover:bg-ice-blue transition-colors duration-300 rounded-lg font-medium">
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="quiz-results" class="hidden text-center">
+                            <h3 class="text-2xl font-orbitron font-bold glow-text mb-4">Quiz Complete!</h3>
+                            <div class="mb-6">
+                                <div class="text-6xl mb-4" id="results-emoji">🎉</div>
+                                <p class="text-xl mb-2">Your Score: <span id="final-score" class="font-bold text-ice-blue">0</span> / 10</p>
+                                <p class="text-stellar-white/70" id="results-message"></p>
+                            </div>
+                            <button onclick="restartQuiz()" class="px-8 py-3 bg-nebula-blue hover:bg-ice-blue transition-colors duration-300 rounded-lg font-medium mr-4">
+                                Try Again
+                            </button>
+                            <button onclick="closeQuiz()" class="px-8 py-3 bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300 rounded-lg font-medium">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Achievements -->
+            <div class="learning-card rounded-2xl p-8 mb-12">
+                <h2 class="text-2xl font-orbitron font-bold glow-text mb-6">Achievements</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="achievement-item p-4 bg-cosmic-navy/50 rounded-lg text-center opacity-50" data-achievement="first-quiz">
+                        <div class="text-4xl mb-2">🌟</div>
+                        <h3 class="font-semibold mb-1">First Steps</h3>
+                        <p class="text-xs text-stellar-white/70">Complete your first quiz</p>
+                    </div>
+                    
+                    <div class="achievement-item p-4 bg-cosmic-navy/50 rounded-lg text-center opacity-50" data-achievement="perfect-score">
+                        <div class="text-4xl mb-2">🏆</div>
+                        <h3 class="font-semibold mb-1">Perfect Score</h3>
+                        <p class="text-xs text-stellar-white/70">Get 10/10 on a quiz</p>
+                    </div>
+                    
+                    <div class="achievement-item p-4 bg-cosmic-navy/50 rounded-lg text-center opacity-50" data-achievement="space-expert">
+                        <div class="text-4xl mb-2">🚀</div>
+                        <h3 class="font-semibold mb-1">Space Expert</h3>
+                        <p class="text-xs text-stellar-white/70">Complete all lessons</p>
+                    </div>
+                    
+                    <div class="achievement-item p-4 bg-cosmic-navy/50 rounded-lg text-center opacity-50" data-achievement="quiz-master">
+                        <div class="text-4xl mb-2">🧠</div>
+                        <h3 class="font-semibold mb-1">Quiz Master</h3>
+                        <p class="text-xs text-stellar-white/70">Take 5 quizzes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fun Facts -->
+            <div class="learning-card rounded-2xl p-8">
+                <h2 class="text-2xl font-orbitron font-bold glow-text mb-6">Did You Know?</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">🌟 Star Fact</h3>
+                            <p class="text-stellar-white/80">A teaspoon of neutron star material would weigh about 6 billion tons on Earth!</p>
+                        </div>
+                        
+                        <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">🪐 Planet Fact</h3>
+                            <p class="text-stellar-white/80">Jupiter's Great Red Spot is a storm larger than Earth that has been raging for over 300 years!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">🚀 Space Mission Fact</h3>
+                            <p class="text-stellar-white/80">Voyager 1 is now over 24 billion kilometers from Earth and still transmitting data!</p>
+                        </div>
+                        
+                        <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">🌌 Universe Fact</h3>
+                            <p class="text-stellar-white/80">There are more stars in the universe than grains of sand on all Earth's beaches!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Lesson Modal -->
+    <div id="lesson-modal" class="fixed inset-0 bg-space-black/80 z-50 hidden items-center justify-center p-4">
+        <div class="quiz-card rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-6">
+                <h2 id="lesson-title" class="text-3xl font-orbitron font-bold glow-text"></h2>
+                <button onclick="closeLesson()" class="text-stellar-white/70 hover:text-stellar-white transition-colors duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="lesson-content">
+                <!-- Lesson content will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Quiz data
+        const quizData = [
+            {
+                question: "Which planet is known as the 'Red Planet'?",
+                options: ["Venus", "Mars", "Jupiter", "Mercury"],
+                correct: 1,
+                explanation: "Mars is called the Red Planet due to iron oxide (rust) on its surface."
+            },
+            {
+                question: "What is the largest planet in our solar system?",
+                options: ["Saturn", "Neptune", "Jupiter", "Uranus"],
+                correct: 2,
+                explanation: "Jupiter is the largest planet, with a mass greater than all other planets combined."
+            },
+            {
+                question: "How many moons does Earth have?",
+                options: ["0", "1", "2", "3"],
+                correct: 1,
+                explanation: "Earth has one natural satellite, which we call the Moon."
+            },
+            {
+                question: "Which planet is closest to the Sun?",
+                options: ["Venus", "Mercury", "Earth", "Mars"],
+                correct: 1,
+                explanation: "Mercury is the closest planet to the Sun, orbiting at an average distance of 57.9 million km."
+            },
+            {
+                question: "What are Saturn's rings made of?",
+                options: ["Gas and dust", "Ice and rock particles", "Metal fragments", "Liquid water"],
+                correct: 1,
+                explanation: "Saturn's rings are composed primarily of ice particles with a small amount of rocky debris."
+            },
+            {
+                question: "Which spacecraft was the first to land humans on the Moon?",
+                options: ["Apollo 10", "Apollo 11", "Apollo 12", "Apollo 13"],
+                correct: 1,
+                explanation: "Apollo 11 successfully landed the first humans on the Moon on July 20, 1969."
+            },
+            {
+                question: "What is the hottest planet in our solar system?",
+                options: ["Mercury", "Venus", "Mars", "Jupiter"],
+                correct: 1,
+                explanation: "Venus is the hottest planet with surface temperatures around 462°C due to its thick atmosphere."
+            },
+            {
+                question: "How long does it take for light from the Sun to reach Earth?",
+                options: ["8 seconds", "8 minutes", "8 hours", "8 days"],
+                correct: 1,
+                explanation: "Light from the Sun takes approximately 8 minutes and 20 seconds to reach Earth."
+            },
+            {
+                question: "Which planet has the Great Red Spot?",
+                options: ["Saturn", "Mars", "Jupiter", "Neptune"],
+                correct: 2,
+                explanation: "Jupiter's Great Red Spot is a giant storm that has been raging for over 300 years."
+            },
+            {
+                question: "What is the name of our galaxy?",
+                options: ["Andromeda", "Milky Way", "Sombrero", "Whirlpool"],
+                correct: 1,
+                explanation: "Our solar system is located in the Milky Way galaxy, which contains billions of stars."
+            }
+        ];
+        
+        // Lesson data
+        const lessonData = {
+            planets: {
+                title: "Planets of Our Solar System",
+                content: `
+                    <div class="space-y-6">
+                        <p class="text-lg leading-relaxed">Our solar system contains eight planets, each with unique characteristics and fascinating features. Let's explore them in order from the Sun:</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">1. Mercury</h3>
+                                <p class="text-sm text-stellar-white/80">The smallest planet and closest to the Sun. It has extreme temperature variations and no atmosphere.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">2. Venus</h3>
+                                <p class="text-sm text-stellar-white/80">Earth's twin in size, but with a toxic atmosphere and surface temperatures hot enough to melt lead.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">3. Earth</h3>
+                                <p class="text-sm text-stellar-white/80">Our home planet, the only known world with life, featuring liquid water and a protective atmosphere.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">4. Mars</h3>
+                                <p class="text-sm text-stellar-white/80">The Red Planet, known for its iron oxide surface and the largest volcano in the solar system.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">5. Jupiter</h3>
+                                <p class="text-sm text-stellar-white/80">The largest planet, a gas giant with the Great Red Spot storm and dozens of moons.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">6. Saturn</h3>
+                                <p class="text-sm text-stellar-white/80">Famous for its spectacular ring system, this gas giant is less dense than water.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">7. Uranus</h3>
+                                <p class="text-sm text-stellar-white/80">An ice giant that rotates on its side, with a faint ring system and 27 known moons.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">8. Neptune</h3>
+                                <p class="text-sm text-stellar-white/80">The windiest planet with speeds up to 2,100 km/h, and the most distant from the Sun.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-nebula-blue/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">Key Takeaways:</h3>
+                            <ul class="space-y-1 text-sm text-stellar-white/80">
+                                <li>• The four inner planets (Mercury, Venus, Earth, Mars) are rocky and called terrestrial planets</li>
+                                <li>• The four outer planets (Jupiter, Saturn, Uranus, Neptune) are gas giants and ice giants</li>
+                                <li>• Each planet has unique features that make it special</li>
+                                <li>• Only Earth is known to harbor life</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            },
+            orbits: {
+                title: "Orbital Mechanics",
+                content: `
+                    <div class="space-y-6">
+                        <p class="text-lg leading-relaxed">Orbital mechanics, also known as celestial mechanics, is the study of how objects move in space under the influence of gravity. Understanding this helps us predict planetary motion and plan space missions.</p>
+                        
+                        <div class="p-6 bg-cosmic-navy/30 rounded-lg">
+                            <h3 class="text-xl font-semibold text-ice-blue mb-4">Kepler's Laws of Planetary Motion</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-semibold mb-2">First Law - Elliptical Orbits:</h4>
+                                    <p class="text-stellar-white/80 text-sm">Planets orbit the Sun in elliptical paths, with the Sun at one focus of the ellipse.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-2">Second Law - Equal Areas:</h4>
+                                    <p class="text-stellar-white/80 text-sm">A planet sweeps out equal areas in equal times as it orbits the Sun.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-2">Third Law - Harmonic Law:</h4>
+                                    <p class="text-stellar-white/80 text-sm">The square of a planet's orbital period is proportional to the cube of its average distance from the Sun.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">Orbital Speed</h3>
+                                <p class="text-stellar-white/80 text-sm">Planets move faster when closer to the Sun and slower when farther away. This is why Mercury orbits much faster than Neptune.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">Gravity's Role</h3>
+                                <p class="text-stellar-white/80 text-sm">The Sun's gravity keeps planets in orbit. The closer a planet is to the Sun, the stronger the gravitational pull and the faster it must move to stay in orbit.</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            missions: {
+                title: "Space Exploration Missions",
+                content: `
+                    <div class="space-y-6">
+                        <p class="text-lg leading-relaxed">Humanity has launched numerous missions to explore our solar system, from the first satellites to interplanetary probes. These missions have revolutionized our understanding of space.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🚀 Early Space Exploration</h3>
+                                <p class="text-stellar-white/80 text-sm">The Space Age began in 1957 with Sputnik 1. The 1960s saw the Apollo program land humans on the Moon, with Apollo 11 achieving this historic feat in 1969.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🪐 Planetary Exploration</h3>
+                                <p class="text-stellar-white/80 text-sm">The Voyager program (1977) provided unprecedented views of the outer planets. Cassini-Huygens (1997-2017) extensively studied Saturn and its moons.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🔴 Mars Exploration</h3>
+                                <p class="text-stellar-white/80 text-sm">Multiple rovers have explored Mars, including Spirit, Opportunity, Curiosity, and Perseverance. These missions search for signs of past or present life.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🌌 Deep Space Missions</h3>
+                                <p class="text-stellar-white/80 text-sm">Voyager 1 entered interstellar space in 2012, providing data about the region beyond our solar system. New Horizons flew by Pluto in 2015.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-nebula-blue/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">Future Missions:</h3>
+                            <ul class="space-y-1 text-sm text-stellar-white/80">
+                                <li>• Mars Sample Return mission to bring Martian samples to Earth</li>
+                                <li>• Europa Clipper to study Jupiter's moon Europa</li>
+                                <li>• Artemis program to return humans to the Moon</li>
+                                <li>• Potential crewed missions to Mars in the 2030s</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            },
+            'space-facts': {
+                title: "Amazing Space Facts",
+                content: `
+                    <div class="space-y-6">
+                        <p class="text-lg leading-relaxed">Space is full of incredible phenomena and mind-boggling facts. Here are some of the most amazing things about our universe:</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🌟 Star Facts</h3>
+                                <ul class="space-y-2 text-sm text-stellar-white/80">
+                                    <li>• A teaspoon of neutron star material weighs 6 billion tons</li>
+                                    <li>• The Sun makes up 99.86% of the Solar System's mass</li>
+                                    <li>• Some stars are so large that if placed at the Sun's position, they would extend beyond Jupiter's orbit</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🪐 Planet Facts</h3>
+                                <ul class="space-y-2 text-sm text-stellar-white/80">
+                                    <li>• Jupiter's Great Red Spot is a storm larger than Earth</li>
+                                    <li>• Saturn would float in water if there was an ocean big enough</li>
+                                    <li>• Venus rotates backwards compared to most planets</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🚀 Space Exploration Facts</h3>
+                                <ul class="space-y-2 text-sm text-stellar-white/80">
+                                    <li>• Voyager 1 is now over 24 billion kilometers from Earth</li>
+                                    <li>• The Apollo computers had less processing power than a modern calculator</li>
+                                    <li>• Astronauts grow taller in space due to lack of gravity</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="p-4 bg-cosmic-navy/30 rounded-lg">
+                                <h3 class="text-lg font-semibold text-ice-blue mb-2">🌌 Universe Facts</h3>
+                                <ul class="space-y-2 text-sm text-stellar-white/80">
+                                    <li>• There are more stars in the universe than grains of sand on Earth</li>
+                                    <li>• The observable universe is about 93 billion light-years across</li>
+                                    <li>• Black holes can spin at nearly the speed of light</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-nebula-blue/30 rounded-lg">
+                            <h3 class="text-lg font-semibold text-ice-blue mb-2">Mind-Bending Scale:</h3>
+                            <p class="text-stellar-white/80 text-sm mb-2">If the Sun were the size of a basketball:</p>
+                            <ul class="space-y-1 text-sm text-stellar-white/80">
+                                <li>• Earth would be a sesame seed 30 meters away</li>
+                                <li>• Jupiter would be a golf ball 150 meters away</li>
+                                <li>• Neptune would be a small pea 900 meters away</li>
+                                <li>• The nearest star would be another basketball 8,000 km away!</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            }
+        };
+        
+        let currentQuiz = {
+            questions: [...quizData].sort(() => Math.random() - 0.5), // Shuffle questions
+            currentQuestion: 0,
+            score: 0,
+            answers: [],
+            completed: false
+        };
+        
+        let userProgress = {
+            completedLessons: [],
+            quizScores: [],
+            achievements: [],
+            totalQuizzes: 0
+        };
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProgress();
+            updateProgressDisplay();
+            updateAchievements();
+        });
+        
+        function loadUserProgress() {
+            const saved = localStorage.getItem('cosmicExplorerProgress');
+            if (saved) {
+                userProgress = JSON.parse(saved);
+            }
+        }
+        
+        function saveUserProgress() {
+            localStorage.setItem('cosmicExplorerProgress', JSON.stringify(userProgress));
+        }
+        
+        function updateProgressDisplay() {
+            const completedCount = userProgress.completedLessons.length;
+            const totalLessons = 4;
+            const percentage = Math.round((completedCount / totalLessons) * 100);
+            
+            document.getElementById('progress-percentage').textContent = `${percentage}%`;
+            document.getElementById('completed-lessons').textContent = completedCount;
+            
+            // Update progress ring
+            const circle = document.querySelector('.progress-ring-circle');
+            const circumference = 2 * Math.PI * 40;
+            const offset = circumference - (percentage / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+            
+            // Update lesson progress indicators
+            userProgress.completedLessons.forEach(lesson => {
+                const item = document.querySelector(`[data-lesson="${lesson}"]`);
+                if (item) {
+                    const circle = item.querySelector('.w-8');
+                    circle.classList.remove('border-stellar-white/30');
+                    circle.classList.add('bg-ice-blue', 'text-space-black');
+                    circle.innerHTML = '✓';
+                }
+            });
+        }
+        
+        function updateAchievements() {
+            userProgress.achievements.forEach(achievement => {
+                const item = document.querySelector(`[data-achievement="${achievement}"]`);
+                if (item) {
+                    item.classList.remove('opacity-50');
+                    item.classList.add('achievement-badge');
+                }
+            });
+        }
+        
+        function unlockAchievement(achievement) {
+            if (!userProgress.achievements.includes(achievement)) {
+                userProgress.achievements.push(achievement);
+                saveUserProgress();
+                updateAchievements();
+                
+                // Show achievement notification
+                showAchievementNotification(achievement);
+            }
+        }
+        
+        function showAchievementNotification(achievement) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-ice-blue to-saturn-gold text-space-black p-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            notification.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="text-2xl">🏆</div>
+                    <div>
+                        <h4 class="font-bold">Achievement Unlocked!</h4>
+                        <p class="text-sm">${achievement.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        function startLesson(lessonKey) {
+            const lesson = lessonData[lessonKey];
+            if (!lesson) return;
+            
+            document.getElementById('lesson-title').textContent = lesson.title;
+            document.getElementById('lesson-content').innerHTML = lesson.content;
+            document.getElementById('lesson-modal').classList.remove('hidden');
+            document.getElementById('lesson-modal').classList.add('flex');
+            
+            // Mark lesson as completed
+            if (!userProgress.completedLessons.includes(lessonKey)) {
+                userProgress.completedLessons.push(lessonKey);
+                saveUserProgress();
+                updateProgressDisplay();
+                
+                // Check for space expert achievement
+                if (userProgress.completedLessons.length === 4) {
+                    unlockAchievement('space-expert');
+                }
+            }
+        }
+        
+        function closeLesson() {
+            document.getElementById('lesson-modal').classList.add('hidden');
+            document.getElementById('lesson-modal').classList.remove('flex');
+        }
+        
+        function startQuiz() {
+            currentQuiz = {
+                questions: [...quizData].sort(() => Math.random() - 0.5),
+                currentQuestion: 0,
+                score: 0,
+                answers: [],
+                completed: false
+            };
+            
+            document.getElementById('quiz-start').classList.add('hidden');
+            document.getElementById('quiz-question').classList.remove('hidden');
+            
+            showQuestion();
+        }
+        
+        function showQuestion() {
+            const question = currentQuiz.questions[currentQuiz.currentQuestion];
+            
+            document.getElementById('current-question').textContent = currentQuiz.currentQuestion + 1;
+            document.getElementById('total-questions').textContent = currentQuiz.questions.length;
+            document.getElementById('current-score').textContent = currentQuiz.score;
+            document.getElementById('question-text').textContent = question.question;
+            
+            const progress = ((currentQuiz.currentQuestion + 1) / currentQuiz.questions.length) * 100;
+            document.getElementById('quiz-progress').style.width = `${progress}%`;
+            
+            const optionsContainer = document.getElementById('answer-options');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'answer-option p-3 rounded-lg';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Update navigation buttons
+            document.getElementById('prev-question').disabled = currentQuiz.currentQuestion === 0;
+            document.getElementById('next-question').textContent = 
+                currentQuiz.currentQuestion === currentQuiz.questions.length - 1 ? 'Finish' : 'Next';
+        }
+        
+        function selectAnswer(answerIndex) {
+            const options = document.querySelectorAll('.answer-option');
+            const question = currentQuiz.questions[currentQuiz.currentQuestion];
+            
+            // Clear previous selections
+            options.forEach(option => {
+                option.classList.remove('selected', 'correct', 'incorrect');
+            });
+            
+            // Mark selected answer
+            options[answerIndex].classList.add('selected');
+            
+            // Store answer
+            currentQuiz.answers[currentQuiz.currentQuestion] = answerIndex;
+            
+            // Show correct answer after selection
+            setTimeout(() => {
+                options[question.correct].classList.add('correct');
+                if (answerIndex !== question.correct) {
+                    options[answerIndex].classList.add('incorrect');
+                }
+                
+                // Update score
+                if (answerIndex === question.correct) {
+                    currentQuiz.score++;
+                    document.getElementById('current-score').textContent = currentQuiz.score;
+                }
+            }, 500);
+        }
+        
+        function nextQuestion() {
+            if (currentQuiz.currentQuestion < currentQuiz.questions.length - 1) {
+                currentQuiz.currentQuestion++;
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+        
+        function previousQuestion() {
+            if (currentQuiz.currentQuestion > 0) {
+                currentQuiz.currentQuestion--;
+                showQuestion();
+            }
+        }
+        
+        function finishQuiz() {
+            currentQuiz.completed = true;
+            userProgress.totalQuizzes++;
+            userProgress.quizScores.push(currentQuiz.score);
+            saveUserProgress();
+            
+            // Check achievements
+            if (userProgress.totalQuizzes === 1) {
+                unlockAchievement('first-quiz');
+            }
+            if (userProgress.totalQuizzes >= 5) {
+                unlockAchievement('quiz-master');
+            }
+            if (currentQuiz.score === currentQuiz.questions.length) {
+                unlockAchievement('perfect-score');
+            }
+            
+            showResults();
+        }
+        
+        function showResults() {
+            document.getElementById('quiz-question').classList.add('hidden');
+            document.getElementById('quiz-results').classList.remove('hidden');
+            
+            const score = currentQuiz.score;
+            const total = currentQuiz.questions.length;
+            const percentage = Math.round((score / total) * 100);
+            
+            document.getElementById('final-score').textContent = score;
+            
+            let message = '';
+            let emoji = '🎉';
+            
+            if (percentage >= 90) {
+                message = 'Outstanding! You\'re a space expert!';
+                emoji = '🌟';
+            } else if (percentage >= 70) {
+                message = 'Great job! You have solid space knowledge.';
+                emoji = '🚀';
+            } else if (percentage >= 50) {
+                message = 'Good effort! Keep learning about space.';
+                emoji = '🌙';
+            } else {
+                message = 'Keep studying! There\'s so much to discover about space.';
+                emoji = '⭐';
+            }
+            
+            document.getElementById('results-message').textContent = message;
+            document.getElementById('results-emoji').textContent = emoji;
+        }
+        
+        function restartQuiz() {
+            document.getElementById('quiz-results').classList.add('hidden');
+            startQuiz();
+        }
+        
+        function closeQuiz() {
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-start').classList.remove('hidden');
+        }
+        
+        // Close modals when clicking outside
+        document.getElementById('lesson-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLesson();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Missions - Cosmic Explorer</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'space-black': '#0a0a0a',
+                        'cosmic-navy': '#1a1a2e',
+                        'stellar-white': '#f8f8f2',
+                        'nebula-blue': '#16213e',
+                        'mars-red': '#cd5c5c',
+                        'jupiter-orange': '#d2691e',
+                        'saturn-gold': '#daa520',
+                        'ice-blue': '#87ceeb'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'orbitron': ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(30, 144, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 20% 80%, rgba(255, 20, 147, 0.1) 0%, transparent 50%);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(248, 248, 242, 0.3);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(10px);
+            background: rgba(26, 26, 46, 0.8);
+        }
+        
+        .mission-card {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(248, 248, 242, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .mission-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(135, 206, 235, 0.2);
+            border-color: rgba(135, 206, 235, 0.3);
+        }
+        
+        .mission-control-panel {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(248, 248, 242, 0.1);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #87ceeb;
+            box-shadow: 0 0 10px rgba(135, 206, 235, 0.5);
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 1.5rem;
+            width: 2px;
+            height: calc(100% - 1rem);
+            background: linear-gradient(to bottom, #87ceeb, transparent);
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #87ceeb 0%, #d2691e 50%, #cd5c5c 100%);
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .mission-active {
+            border-color: #87ceeb;
+            box-shadow: 0 0 20px rgba(135, 206, 235, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-space-black text-stellar-white font-inter">
+    <!-- Animated Starfield Background -->
+    <div class="starfield"></div>
+    
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-stellar-white/10">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-ice-blue to-jupiter-orange">
+                        <div class="w-full h-full rounded-full bg-gradient-to-br from-transparent to-white/20"></div>
+                    </div>
+                    <h1 class="text-2xl font-orbitron font-bold glow-text">Cosmic Explorer</h1>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Solar System</a>
+                    <a href="planets.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Planets</a>
+                    <a href="missions.html" class="text-stellar-white hover:text-ice-blue transition-colors duration-300 font-medium">Missions</a>
+                    <a href="education.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Learn</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden text-stellar-white hover:text-ice-blue transition-colors duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-24 pb-12">
+        <div class="container mx-auto px-6">
+            <!-- Page Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-5xl font-orbitron font-black glow-text mb-4">Space Exploration Missions</h1>
+                <p class="text-xl text-stellar-white/70 max-w-3xl mx-auto">
+                    Discover the incredible journeys of spacecraft that have explored our solar system. 
+                    Follow their paths, learn about their discoveries, and experience the timeline of human space exploration.
+                </p>
+            </div>
+            
+            <!-- Mission Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                <!-- Voyager Mission -->
+                <div class="mission-card rounded-2xl p-6 cursor-pointer" onclick="selectMission('voyager')">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-orbitron font-bold">Voyager Program</h3>
+                        <span class="px-3 py-1 bg-ice-blue text-space-black rounded-full text-sm font-semibold">1977-Present</span>
+                    </div>
+                    <p class="text-stellar-white/70 mb-4">
+                        Twin spacecraft that revolutionized our understanding of the outer planets and continue to send data from interstellar space.
+                    </p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-stellar-white/60">Status: Active</span>
+                        <span class="text-stellar-white/60">Target: Outer Planets</span>
+                    </div>
+                </div>
+                
+                <!-- Cassini Mission -->
+                <div class="mission-card rounded-2xl p-6 cursor-pointer" onclick="selectMission('cassini')">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-orbitron font-bold">Cassini-Huygens</h3>
+                        <span class="px-3 py-1 bg-saturn-gold text-space-black rounded-full text-sm font-semibold">1997-2017</span>
+                    </div>
+                    <p class="text-stellar-white/70 mb-4">
+                        Comprehensive study of Saturn, its rings, and moons. Delivered the Huygens probe to Titan's surface.
+                    </p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-stellar-white/60">Status: Completed</span>
+                        <span class="text-stellar-white/60">Target: Saturn</span>
+                    </div>
+                </div>
+                
+                <!-- Mars Perseverance -->
+                <div class="mission-card rounded-2xl p-6 cursor-pointer" onclick="selectMission('perseverance')">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-orbitron font-bold">Mars Perseverance</h3>
+                        <span class="px-3 py-1 bg-mars-red text-stellar-white rounded-full text-sm font-semibold">2020-Present</span>
+                    </div>
+                    <p class="text-stellar-white/70 mb-4">
+                        NASA's most advanced rover searching for signs of ancient microbial life and collecting samples for future return to Earth.
+                    </p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-stellar-white/60">Status: Active</span>
+                        <span class="text-stellar-white/60">Target: Mars</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mission Control Panel -->
+            <div id="mission-control" class="mission-control-panel rounded-2xl p-8 mb-12 hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 id="mission-title" class="text-3xl font-orbitron font-bold glow-text"></h2>
+                    <button onclick="closeMissionControl()" class="text-stellar-white/70 hover:text-stellar-white transition-colors duration-300">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Mission Progress -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-lg font-semibold">Mission Timeline</span>
+                        <span id="mission-progress-text" class="text-stellar-white/70">0%</span>
+                    </div>
+                    <div class="w-full bg-cosmic-navy rounded-full h-2">
+                        <div id="mission-progress-bar" class="progress-bar w-0"></div>
+                    </div>
+                </div>
+                
+                <!-- Mission Content -->
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Mission Timeline -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-ice-blue">Mission Timeline</h3>
+                        <div id="mission-timeline" class="space-y-4">
+                            <!-- Timeline items will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Mission Statistics -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-ice-blue">Mission Statistics</h3>
+                        <div id="mission-stats" class="space-y-4">
+                            <!-- Statistics will be populated here -->
+                        </div>
+                        
+                        <!-- Mission Chart -->
+                        <div class="mt-6">
+                            <h4 class="text-lg font-semibold mb-3 text-ice-blue">Mission Data</h4>
+                            <div id="mission-chart" style="width: 100%; height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mission Controls -->
+                <div class="flex items-center justify-center space-x-4 mt-8">
+                    <button id="play-timeline" class="px-6 py-3 bg-nebula-blue hover:bg-ice-blue transition-colors duration-300 rounded-lg font-medium">
+                        Play Timeline
+                    </button>
+                    <button id="reset-timeline" class="px-6 py-3 bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300 rounded-lg font-medium">
+                        Reset
+                    </button>
+                    <button id="speed-control" class="px-6 py-3 bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300 rounded-lg font-medium">
+                        Speed: 1x
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mission Achievements -->
+            <div class="mission-control-panel rounded-2xl p-8">
+                <h2 class="text-3xl font-orbitron font-bold glow-text mb-6 text-center">Mission Achievements</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-cosmic-navy/50 p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-ice-blue rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-space-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">First Planetary Flyby</h3>
+                        <p class="text-stellar-white/70 text-sm">Mariner 2 successfully flew by Venus in 1962, becoming the first spacecraft to visit another planet.</p>
+                    </div>
+                    
+                    <div class="bg-cosmic-navy/50 p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-saturn-gold rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-space-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Moon Landing</h3>
+                        <p class="text-stellar-white/70 text-sm">Apollo 11 landed humans on the Moon in 1969, achieving humanity's first steps on another celestial body.</p>
+                    </div>
+                    
+                    <div class="bg-cosmic-navy/50 p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-mars-red rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-stellar-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Mars Exploration</h3>
+                        <p class="text-stellar-white/70 text-sm">Multiple rovers have explored Mars, with Perseverance currently searching for signs of ancient life.</p>
+                    </div>
+                    
+                    <div class="bg-cosmic-navy/50 p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-jupiter-orange rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-space-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Outer Planet Exploration</h3>
+                        <p class="text-stellar-white/70 text-sm">Voyager and Cassini missions provided unprecedented views and data about the gas giants.</p>
+                    </div>
+                    
+                    <div class="bg-cosmic-navy/50 p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-ice-blue rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-space-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Interstellar Space</h3>
+                        <p class="text-stellar-white/70 text-sm">Voyager 1 became the first human-made object to enter interstellar space in 2012.</p>
+                    </div>
+                    
+                    <div class="bg-cosmic-navy/50 p-6 rounded-xl">
+                        <div class="w-12 h-12 text-stellar-white rounded-full flex items-center justify-center mb-4 bg-gradient-to-r from-purple-500 to-pink-500">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Sample Return</h3>
+                        <p class="text-stellar-white/70 text-sm">OSIRIS-REx successfully collected samples from asteroid Bennu, returning them to Earth in 2023.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Mission data
+        const missionData = {
+            voyager: {
+                title: 'Voyager Program',
+                duration: '1977-Present',
+                description: 'Twin spacecraft that revolutionized our understanding of the outer planets',
+                timeline: [
+                    { date: '1977', event: 'Voyager 1 & 2 launched', description: 'Both spacecraft launched from Cape Canaveral' },
+                    { date: '1979', event: 'Jupiter flyby', description: 'Discovered active volcanoes on Io and detailed Jupiter\'s atmosphere' },
+                    { date: '1980-1981', event: 'Saturn encounters', description: 'Discovered new moons and detailed ring structure' },
+                    { date: '1986', event: 'Uranus flyby (Voyager 2)', description: 'Discovered 10 new moons and studied Uranus\'s magnetic field' },
+                    { date: '1989', event: 'Neptune flyby (Voyager 2)', description: 'Discovered Great Dark Spot and studied Triton' },
+                    { date: '1998', event: 'Voyager 1 passes Pioneer 10', description: 'Becomes most distant human-made object' },
+                    { date: '2012', event: 'Voyager 1 enters interstellar space', description: 'First human-made object to leave heliosphere' },
+                    { date: '2018', event: 'Voyager 2 enters interstellar space', description: 'Second spacecraft to reach interstellar space' }
+                ],
+                stats: {
+                    'Launch Date': 'August 20, 1977 (Voyager 2) / September 5, 1977 (Voyager 1)',
+                    'Mission Duration': '46+ years',
+                    'Distance Traveled': '24+ billion km (Voyager 1)',
+                    'Planets Visited': '4 (Jupiter, Saturn, Uranus, Neptune)',
+                    'Moons Discovered': '22',
+                    'Images Taken': 'Hundreds of thousands',
+                    'Current Status': 'Active in interstellar space'
+                }
+            },
+            cassini: {
+                title: 'Cassini-Huygens Mission',
+                duration: '1997-2017',
+                description: 'Comprehensive study of Saturn, its rings, and moons',
+                timeline: [
+                    { date: '1997', event: 'Launch', description: 'Launched from Cape Canaveral on October 15' },
+                    { date: '1998-1999', event: 'Venus flybys', description: 'Used gravity assists to gain speed for outer solar system journey' },
+                    { date: '2000', event: 'Jupiter flyby', description: 'Studied Jupiter system en route to Saturn' },
+                    { date: '2004', event: 'Saturn orbit insertion', description: 'Successfully entered orbit around Saturn' },
+                    { date: '2005', event: 'Huygens probe lands on Titan', description: 'First landing on a moon in the outer solar system' },
+                    { date: '2006', event: 'Discovery of water geysers on Enceladus', description: 'Found evidence of subsurface ocean' },
+                    { date: '2013', event: 'Cassini sees Earth from Saturn', description: 'Captured iconic "Pale Blue Dot" image' },
+                    { date: '2017', event: 'Grand Finale', description: 'Mission ended with controlled descent into Saturn\'s atmosphere' }
+                ],
+                stats: {
+                    'Launch Date': 'October 15, 1997',
+                    'Mission Duration': '20 years',
+                    'Distance Traveled': '7.8 billion km',
+                    'Saturn Orbits': '294',
+                    'Moon Flybys': '162',
+                    'Images Taken': '450,000+',
+                    'Scientific Papers': '4,000+',
+                    'Discovery Highlights': 'Water on Enceladus, methane lakes on Titan'
+                }
+            },
+            perseverance: {
+                title: 'Mars Perseverance Rover',
+                duration: '2020-Present',
+                description: 'Searching for signs of ancient microbial life on Mars',
+                timeline: [
+                    { date: '2020', event: 'Launch', description: 'Launched from Cape Canaveral on July 30' },
+                    { date: '2021', event: 'Mars landing', description: 'Successfully landed in Jezero Crater on February 18' },
+                    { date: '2021', event: 'First oxygen production', description: 'MOXIE instrument produced oxygen from Martian atmosphere' },
+                    { date: '2021', event: 'First flight of Ingenuity helicopter', description: 'First powered flight on another planet' },
+                    { date: '2021', event: 'First rock sample collected', description: 'Began collecting samples for future return to Earth' },
+                    { date: '2022', event: 'Reached ancient delta', description: 'Arrived at site of ancient river delta' },
+                    { date: '2023', event: 'Completed sample depot', description: 'Deposited samples for future collection' },
+                    { date: '2024', event: 'Extended mission', description: 'Mission extended indefinitely' }
+                ],
+                stats: {
+                    'Launch Date': 'July 30, 2020',
+                    'Mars Landing': 'February 18, 2021',
+                    'Mission Duration': '3+ years (planned for 1 Mars year)',
+                    'Distance Traveled': '25+ km on Mars',
+                    'Samples Collected': '24+ rock and soil samples',
+                    'Images Taken': '150,000+',
+                    'Ingenuity Flights': '72+ flights (as of 2024)',
+                    'Scientific Instruments': '7 primary instruments'
+                }
+            }
+        };
+        
+        let currentMission = null;
+        let timelineProgress = 0;
+        let timelineSpeed = 1;
+        let timelineInterval = null;
+        
+        function selectMission(missionKey) {
+            currentMission = missionKey;
+            const mission = missionData[missionKey];
+            
+            // Update mission control panel
+            document.getElementById('mission-title').textContent = mission.title;
+            document.getElementById('mission-control').classList.remove('hidden');
+            
+            // Populate timeline
+            populateTimeline(mission.timeline);
+            
+            // Populate statistics
+            populateStatistics(mission.stats);
+            
+            // Initialize mission chart
+            initMissionChart(mission);
+            
+            // Reset timeline progress
+            timelineProgress = 0;
+            updateTimelineProgress();
+            
+            // Scroll to mission control
+            document.getElementById('mission-control').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function populateTimeline(timeline) {
+            const timelineContainer = document.getElementById('mission-timeline');
+            timelineContainer.innerHTML = '';
+            
+            timeline.forEach((item, index) => {
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                timelineItem.innerHTML = `
+                    <div class="bg-cosmic-navy/50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-lg font-semibold text-ice-blue">${item.date}</span>
+                            <span class="text-xs text-stellar-white/60">Step ${index + 1}</span>
+                        </div>
+                        <h4 class="font-semibold mb-1">${item.event}</h4>
+                        <p class="text-stellar-white/70 text-sm">${item.description}</p>
+                    </div>
+                `;
+                timelineContainer.appendChild(timelineItem);
+            });
+        }
+        
+        function populateStatistics(stats) {
+            const statsContainer = document.getElementById('mission-stats');
+            statsContainer.innerHTML = '';
+            
+            Object.entries(stats).forEach(([key, value]) => {
+                const statItem = document.createElement('div');
+                statItem.className = 'flex justify-between py-2 border-b border-stellar-white/10';
+                statItem.innerHTML = `
+                    <span class="text-stellar-white/70">${key}:</span>
+                    <span class="font-mono text-sm">${value}</span>
+                `;
+                statsContainer.appendChild(statItem);
+            });
+        }
+        
+        function initMissionChart(mission) {
+            const chartDom = document.getElementById('mission-chart');
+            const myChart = echarts.init(chartDom);
+            
+            // Create sample data based on mission type
+            let chartData = [];
+            if (currentMission === 'voyager') {
+                chartData = [
+                    { name: 'Jupiter', value: 1979 },
+                    { name: 'Saturn', value: 1980 },
+                    { name: 'Uranus', value: 1986 },
+                    { name: 'Neptune', value: 1989 },
+                    { name: 'Interstellar', value: 2012 }
+                ];
+            } else if (currentMission === 'cassini') {
+                chartData = [
+                    { name: 'Launch', value: 1997 },
+                    { name: 'Venus Assist', value: 1998 },
+                    { name: 'Jupiter Flyby', value: 2000 },
+                    { name: 'Saturn Arrival', value: 2004 },
+                    { name: 'Titan Landing', value: 2005 },
+                    { name: 'Mission End', value: 2017 }
+                ];
+            } else if (currentMission === 'perseverance') {
+                chartData = [
+                    { name: 'Launch', value: 2020 },
+                    { name: 'Mars Landing', value: 2021 },
+                    { name: 'First Flight', value: 2021 },
+                    { name: 'Sample Collection', value: 2021 },
+                    { name: 'Delta Exploration', value: 2022 },
+                    { name: 'Extended Mission', value: 2024 }
+                ];
+            }
+            
+            const option = {
+                backgroundColor: 'transparent',
+                title: {
+                    text: 'Mission Milestones',
+                    textStyle: {
+                        color: '#f8f8f2',
+                        fontSize: 16
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                    borderColor: 'rgba(135, 206, 235, 0.3)',
+                    textStyle: {
+                        color: '#f8f8f2'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: chartData.map(item => item.name),
+                    axisLabel: {
+                        color: '#f8f8f2',
+                        rotate: 45
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(248, 248, 242, 0.3)'
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Year',
+                    nameTextStyle: {
+                        color: '#f8f8f2'
+                    },
+                    axisLabel: {
+                        color: '#f8f8f2'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(248, 248, 242, 0.3)'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(248, 248, 242, 0.1)'
+                        }
+                    }
+                },
+                series: [{
+                    data: chartData.map(item => item.value),
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        color: '#87ceeb',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#87ceeb'
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: 'rgba(135, 206, 235, 0.3)'
+                            }, {
+                                offset: 1, color: 'rgba(135, 206, 235, 0.05)'
+                            }]
+                        }
+                    }
+                }]
+            };
+            
+            myChart.setOption(option);
+            
+            // Make chart responsive
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+        
+        function updateTimelineProgress() {
+            const progressBar = document.getElementById('mission-progress-bar');
+            const progressText = document.getElementById('mission-progress-text');
+            
+            progressBar.style.width = `${timelineProgress}%`;
+            progressText.textContent = `${Math.round(timelineProgress)}%`;
+            
+            // Highlight current timeline item
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach((item, index) => {
+                const itemProgress = ((index + 1) / timelineItems.length) * 100;
+                if (timelineProgress >= itemProgress) {
+                    item.classList.add('mission-active');
+                } else {
+                    item.classList.remove('mission-active');
+                }
+            });
+        }
+        
+        function playTimeline() {
+            if (timelineInterval) {
+                clearInterval(timelineInterval);
+                timelineInterval = null;
+                document.getElementById('play-timeline').textContent = 'Play Timeline';
+                return;
+            }
+            
+            document.getElementById('play-timeline').textContent = 'Pause Timeline';
+            
+            timelineInterval = setInterval(() => {
+                timelineProgress += timelineSpeed;
+                if (timelineProgress >= 100) {
+                    timelineProgress = 100;
+                    clearInterval(timelineInterval);
+                    timelineInterval = null;
+                    document.getElementById('play-timeline').textContent = 'Play Timeline';
+                }
+                updateTimelineProgress();
+            }, 100);
+        }
+        
+        function resetTimeline() {
+            if (timelineInterval) {
+                clearInterval(timelineInterval);
+                timelineInterval = null;
+                document.getElementById('play-timeline').textContent = 'Play Timeline';
+            }
+            
+            timelineProgress = 0;
+            updateTimelineProgress();
+        }
+        
+        function toggleSpeed() {
+            const speeds = [1, 2, 5, 10];
+            const currentIndex = speeds.indexOf(timelineSpeed);
+            const nextIndex = (currentIndex + 1) % speeds.length;
+            timelineSpeed = speeds[nextIndex];
+            
+            document.getElementById('speed-control').textContent = `Speed: ${timelineSpeed}x`;
+        }
+        
+        function closeMissionControl() {
+            document.getElementById('mission-control').classList.add('hidden');
+            if (timelineInterval) {
+                clearInterval(timelineInterval);
+                timelineInterval = null;
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('play-timeline').addEventListener('click', playTimeline);
+            document.getElementById('reset-timeline').addEventListener('click', resetTimeline);
+            document.getElementById('speed-control').addEventListener('click', toggleSpeed);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Explorer - Interactive 3D Solar System</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/splitting@1.0.6/dist/splitting.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'space-black': '#0a0a0a',
+                        'cosmic-navy': '#1a1a2e',
+                        'stellar-white': '#f8f8f2',
+                        'nebula-blue': '#16213e',
+                        'mars-red': '#cd5c5c',
+                        'jupiter-orange': '#d2691e',
+                        'saturn-gold': '#daa520',
+                        'ice-blue': '#87ceeb'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'orbitron': ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            overflow: hidden;
+        }
+        
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(30, 144, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 20% 80%, rgba(255, 20, 147, 0.1) 0%, transparent 50%);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(248, 248, 242, 0.3);
+        }
+        
+        .planet-glow {
+            box-shadow: 0 0 20px rgba(135, 206, 235, 0.4);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(10px);
+            background: rgba(26, 26, 46, 0.8);
+        }
+        
+        .control-panel {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(248, 248, 242, 0.1);
+        }
+        
+        .info-panel {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(248, 248, 242, 0.1);
+        }
+        
+        .orbital-ring {
+            border: 1px solid rgba(248, 248, 242, 0.2);
+            border-radius: 50%;
+            position: absolute;
+            animation: rotate 60s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .loading-spinner {
+            border: 2px solid rgba(248, 248, 242, 0.1);
+            border-top: 2px solid #87ceeb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #solar-system-canvas {
+            cursor: grab;
+        }
+        
+        #solar-system-canvas:active {
+            cursor: grabbing;
+        }
+        
+        .planet-info {
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+        
+        .planet-info.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .time-control {
+            background: rgba(22, 33, 62, 0.8);
+            border: 1px solid rgba(248, 248, 242, 0.2);
+            border-radius: 8px;
+        }
+        
+        .speed-slider {
+            background: linear-gradient(90deg, #87ceeb 0%, #d2691e 50%, #cd5c5c 100%);
+            height: 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-space-black text-stellar-white font-inter">
+    <!-- Animated Starfield Background -->
+    <div class="starfield"></div>
+    
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-stellar-white/10">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-ice-blue to-jupiter-orange floating">
+                        <div class="w-full h-full rounded-full bg-gradient-to-br from-transparent to-white/20"></div>
+                    </div>
+                    <h1 class="text-2xl font-orbitron font-bold glow-text">Cosmic Explorer</h1>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-stellar-white hover:text-ice-blue transition-colors duration-300 font-medium">Solar System</a>
+                    <a href="planets.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Planets</a>
+                    <a href="missions.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Missions</a>
+                    <a href="education.html" class="text-stellar-white/70 hover:text-ice-blue transition-colors duration-300 font-medium">Learn</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden text-stellar-white hover:text-ice-blue transition-colors duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main 3D Canvas Container -->
+    <div class="fixed inset-0 pt-20">
+        <canvas id="solar-system-canvas" class="w-full h-full"></canvas>
+        
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="absolute inset-0 flex items-center justify-center bg-space-black/90 z-40">
+            <div class="text-center">
+                <div class="loading-spinner w-16 h-16 mx-auto mb-4"></div>
+                <p class="text-xl font-orbitron glow-text">Initializing Solar System...</p>
+                <p class="text-stellar-white/70 mt-2">Loading planetary data and textures</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Planet Information Panel -->
+    <div id="planet-info-panel" class="fixed right-0 top-20 h-full w-96 info-panel transform translate-x-full transition-transform duration-500 ease-in-out z-30">
+        <div class="p-6 h-full overflow-y-auto">
+            <!-- Close Button -->
+            <button id="close-info-panel" class="absolute top-4 right-4 text-stellar-white/70 hover:text-stellar-white transition-colors duration-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            
+            <!-- Planet Content -->
+            <div id="planet-content">
+                <div class="text-center mb-6">
+                    <div id="planet-icon" class="w-24 h-24 mx-auto mb-4 rounded-full planet-glow"></div>
+                    <h2 id="planet-name" class="text-3xl font-orbitron font-bold glow-text mb-2"></h2>
+                    <p id="planet-type" class="text-stellar-white/70 font-mono"></p>
+                </div>
+                
+                <!-- Planet Statistics -->
+                <div class="space-y-4 mb-6">
+                    <div class="bg-cosmic-navy/50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-3 text-ice-blue">Physical Characteristics</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Diameter:</span>
+                                <span id="planet-diameter" class="font-mono"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Mass:</span>
+                                <span id="planet-mass" class="font-mono"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Distance from Sun:</span>
+                                <span id="planet-distance" class="font-mono"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Orbital Period:</span>
+                                <span id="planet-period" class="font-mono"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-cosmic-navy/50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-3 text-ice-blue">Environmental Data</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Surface Temperature:</span>
+                                <span id="planet-temp" class="font-mono"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Atmosphere:</span>
+                                <span id="planet-atmosphere" class="font-mono"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-stellar-white/70">Moons:</span>
+                                <span id="planet-moons" class="font-mono"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Planet Description -->
+                <div class="bg-cosmic-navy/30 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-3 text-ice-blue">About</h3>
+                    <p id="planet-description" class="text-stellar-white/80 text-sm leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Control Panel -->
+    <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 control-panel rounded-2xl p-4 z-20">
+        <div class="flex items-center space-x-6">
+            <!-- Time Controls -->
+            <div class="flex items-center space-x-3">
+                <button id="pause-btn" class="p-2 rounded-lg bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    </svg>
+                </button>
+                <button id="play-btn" class="p-2 rounded-lg bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+                <button id="fast-forward-btn" class="p-2 rounded-lg bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Speed Slider -->
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-mono">Speed:</span>
+                <div class="time-control px-3 py-2">
+                    <input type="range" id="speed-slider" min="0" max="100" value="50" class="w-24 h-1 bg-stellar-white/20 rounded-lg appearance-none cursor-pointer">
+                </div>
+                <span id="speed-value" class="text-sm font-mono w-12">1x</span>
+            </div>
+            
+            <!-- View Controls -->
+            <div class="flex items-center space-x-3">
+                <button id="reset-view-btn" class="px-4 py-2 rounded-lg bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300 text-sm font-medium">
+                    Reset View
+                </button>
+                <button id="scale-toggle-btn" class="px-4 py-2 rounded-lg bg-cosmic-navy hover:bg-nebula-blue transition-colors duration-300 text-sm font-medium">
+                    Realistic Scale
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Overlay -->
+    <div id="help-overlay" class="fixed inset-0 bg-space-black/80 z-50 hidden items-center justify-center">
+        <div class="control-panel rounded-2xl p-8 max-w-2xl mx-4">
+            <h2 class="text-2xl font-orbitron font-bold mb-6 text-center glow-text">Navigation Controls</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-3 text-ice-blue">Mouse Controls</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><strong>Left Click + Drag:</strong> Rotate view</li>
+                        <li><strong>Right Click + Drag:</strong> Pan view</li>
+                        <li><strong>Scroll Wheel:</strong> Zoom in/out</li>
+                        <li><strong>Click Planet:</strong> Select and view details</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-3 text-ice-blue">Keyboard Controls</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><strong>Space:</strong> Pause/Play animation</li>
+                        <li><strong>R:</strong> Reset camera view</li>
+                        <li><strong>H:</strong> Toggle help overlay</li>
+                        <li><strong>Escape:</strong> Close panels</li>
+                    </ul>
+                </div>
+            </div>
+            <button id="close-help" class="mt-6 w-full py-3 bg-nebula-blue hover:bg-ice-blue transition-colors duration-300 rounded-lg font-medium">
+                Got it!
+            </button>
+        </div>
+    </div>
+    
+    <!-- Welcome Message -->
+    <div id="welcome-message" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+        <div class="text-center">
+            <h1 class="text-6xl font-orbitron font-black glow-text mb-4">
+                <span id="typed-welcome"></span>
+            </h1>
+            <p class="text-xl text-stellar-white/80 font-light">Explore our cosmic neighborhood in 3D</p>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+</body>
+</html>
